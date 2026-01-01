@@ -1,4 +1,4 @@
-// Tässä on koodi, joka ohjaa laukaisujärjestelmää magneetin avulla.
+// Ohjelma ohjaa laukaisujärjestelmää.
 // Se mittaa pyörimisnopeutta ja huolehtii oikea-aikaisesta laukaisusta.
 
 const int hallPin = A0;

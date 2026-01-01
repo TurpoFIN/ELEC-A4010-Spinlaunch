@@ -1,4 +1,4 @@
-// Tämä koodi ohjaa moottoria ja määrittää laikaisuikkunan
+// Ohjelma ohjaa moottoria ja määrittää laikaisuikkunan
 // Se lukee komentoja sarjaportista ja kiihdyttää moottorin haluttuun vauhtiin.
 
 #include <Servo.h>
@@ -42,7 +42,7 @@ void setup() {
 
   ESC.attach(9); 
   
-  // ESC pitää yleensä "armata" lähettämällä sille neutraali signaali alussa.
+  // ESC pitää yleensä alussa "armata" lähettämällä sille neutraali signaali.
   Serial.println("Arming ESC (Sending Neutral)...");
   ESC.write(90); 
   delay(3000); 

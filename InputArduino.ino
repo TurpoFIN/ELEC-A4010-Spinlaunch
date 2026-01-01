@@ -1,4 +1,4 @@
-// Tällä ohjelmalla vastaanotetaan käyttäjän antama nopeus ja lähetetään se toiselle Arduinolle: LCD-näyttöä, nappia ja RPM-asetuksia.
+// Ohjelmalla vastaanotetaan käyttäjän antama nopeus ja lähetetään se toiselle Arduinolle: LCD-näyttöä, nappia ja RPM-asetuksia.
 
 #include <LiquidCrystal.h>
  
