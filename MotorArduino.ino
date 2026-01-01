@@ -1,29 +1,38 @@
+// Tämä koodi ohjaa moottoria ja määrittää laikaisuikkunan
+// Se lukee komentoja sarjaportista ja kiihdyttää moottorin haluttuun vauhtiin.
+
 #include <Servo.h>
 
 Servo ESC;
 
+// Muuttujat sarjaportin lukemiseen ja komentojen käsittelyyn.
 String inputString = "";         
 bool stringComplete = false;
 bool incomingString = false;
 int parsedValue = 0;
 
+// Moottorin nopeuden hallinta (0-180 asteikolla).
 int speed = 0;
 int targetSpeed = 0;
 int brakeSpeed = 5;
 int brakeDelay = 50;
 
+// Säädetään, kuinka nopeasti moottorin vauhti nousee tai laskee.
 unsigned long previousRampMillis = 0;
 const long rampInterval = 750; 
 
+// Laukaisuun liittyvät pinnit ja aikaviiveet.
 int launchPin = 10;
 unsigned long launchDelay = 3000000; 
 unsigned long launchDiff = 6000000;  
 unsigned long t1 = 0;
 
+// Pidetään kirjaa siitä, missä vaiheessa laukaisuprosessi menee.
 bool launch = false;
 bool hasReachedTargetSpeed = false;
 bool solenoidFired = false; 
 
+// Alustetaan laitteisto ja laitetaan ESC valmiustilaan.
 void setup() {
   Serial.begin(9600);
   Serial.println("=== ESC Launch System ===");
@@ -33,13 +42,16 @@ void setup() {
 
   ESC.attach(9); 
   
+  // ESC pitää yleensä "armata" lähettämällä sille neutraali signaali alussa.
   Serial.println("Arming ESC (Sending Neutral)...");
   ESC.write(90); 
   delay(3000); 
   Serial.println("ESC armed. READY.");
 }
 
+// Pääsilmukka, jossa käsitellään komennot ja ohjataan moottoria.
 void loop() {
+  // Jos sarjaportista tuli uusi komento, se käsitellään tässä.
   if (stringComplete) {
     launch = false;
     hasReachedTargetSpeed = false;
@@ -54,6 +66,7 @@ void loop() {
     char *endPtr;
     parsedValue = strtol(charBuf, &endPtr, 10);
 
+    // Tarkistetaan, oliko kyseessä numero (uusi tavoitenopeus) vai jokin muu komento.
     if (*endPtr == '\0' || *endPtr == '\n' || *endPtr == '\r') {
       if (parsedValue > 8 ) {
         incomingString = false;
@@ -68,6 +81,7 @@ void loop() {
       }
       
     } else {
+      // Käsitellään 's' (pysäytys) ja '+' / '-' säädöt.
       if (inputString.charAt(0) == 's') {
         targetSpeed = 0;
         brake(targetSpeed);
@@ -79,6 +93,7 @@ void loop() {
       }
     }
 
+    // Pidetään tavoitenopeus sallituissa rajoissa.
     targetSpeed = clamp(targetSpeed, 0, 180);
     inputString = "";
   } 
@@ -86,6 +101,7 @@ void loop() {
   else {
     unsigned long currentMillis = millis();
     
+    // Kiihdytetään tai jarrutetaan moottoria vähitellen kohti tavoitetta.
     if (currentMillis - previousRampMillis >= rampInterval) {
       previousRampMillis = currentMillis;
 
@@ -111,20 +127,24 @@ void loop() {
         }
       }
       
+      // Muunnetaan nopeusarvo ESC:n ymmärtämäksi signaaliksi.
       int escSignal = map(speed, 0, 180, 90, 180);
       ESC.write(escSignal);
     }
 
+    // Jos ollaan tavoitenopeudessa, hoidetaan laukaisu oikeaan aikaan.
     if (launch && hasReachedTargetSpeed) {
       unsigned long currentTime = micros();
       unsigned long elapsed = currentTime - t1; 
 
+      // Aktuoidaan solenoidi laukaisun hetkellä.
       if (!solenoidFired && elapsed >= launchDelay) {
         digitalWrite(launchPin, HIGH);
         solenoidFired = true;
         Serial.println("LAUNCH!");
       } 
       
+      // Kun laukaisu on ohi, ajetaan järjestelmä alas.
       else if (elapsed >= (launchDelay + launchDiff)) {
         digitalWrite(launchPin, LOW);
         Serial.println("Sequence Complete. Shutting down...");
@@ -138,12 +158,14 @@ void loop() {
   }
 }
 
+// Apufunktio, joka pitää luvun annettujen rajojen sisällä.
 int clamp(int value, int minVal, int maxVal) {
   if (value < minVal) return minVal;
   if (value > maxVal) return maxVal;
   return value;
 }
 
+// Hallittu jarrutus, jotta moottori ei jarruta liian kovaan.
 void brake(int targetSpeed) {
   Serial.println("Braking...");
   for(speed -= brakeSpeed; speed > brakeSpeed; speed -= brakeSpeed) {
@@ -160,6 +182,7 @@ void brake(int targetSpeed) {
   Serial.println("Stopped.");
 }
 
+// Luetaan sarjaportista tulevat merkit talteen.
 void serialEvent() {
   while (Serial.available()) {
     incomingString = true;
